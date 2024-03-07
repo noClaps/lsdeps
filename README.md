@@ -14,8 +14,7 @@ This is a CLI tool to show the total number of dependencies that any package has
 2. Run the `lsdeps.js` file.
 
    ```sh
-   bun lsdeps.js # This will prompt you to enter a package name.
-   bun lsdeps.js astro # You can also give it a package name as a command line argument.
+   bun lsdeps.js astro # You can give it a package name as a command line argument.
    ```
 
 3. (Optional) Compile the script to a binary.

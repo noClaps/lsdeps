@@ -40,17 +40,17 @@ async function getDeps(packageName, version = "latest") {
 
 async function main() {
   /**
-@type {string}
-The name of the package to look up
-*/
+  @type {string}
+  The name of the package to look up
+  */
   const packageName = process.argv[2] ?? prompt("Enter a package name:");
 
   console.write("Counting dependencies...");
 
   /**
-@type {number}
-The number of dependencies that the package has.
-*/
+  @type {number}
+  The number of dependencies that the package has.
+  */
   const depCount = await getDeps(packageName);
 
   process.stdout.clearLine();

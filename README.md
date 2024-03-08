@@ -11,19 +11,17 @@ This is a CLI tool to show the total number of dependencies that any package has
    cd lsdeps
    ```
 
-2. Run the `lsdeps.js` file.
+2. Run the `lsdeps.go` file.
 
    ```sh
-   bun lsdeps.js astro # You can give it a package name as a command line argument.
+   go run lsdeps.go astro # You can give it a package name as a command line argument.
    ```
 
 3. (Optional) Compile the script to a binary.
    ```sh
-   bun build --compile lsdeps.js
+   go build lsdeps.go
    ```
    You can then place it in your PATH and call it from anywhere.
-
-The script doesn't run with Node. I'm not sure why exactly, but since I don't use Node this issue is low priority for me to fix. If someone else wants to take a shot at fixing it, I'd happily merge the PR. I have not tested it with Deno.
 
 ## Motivation
 
@@ -35,4 +33,4 @@ This, for me, is a flaw in how I think software development on the web _should_ 
 
 I experienced this a few months ago, admittedly in a very low-stakes situation. I updated one of the Rehype dependencies I was using for displaying math on my blog, and suddenly the blog stopped building. Something somewhere in the dependency made it incompatible with whatever Astro was doing, and the changelog for the Rehype dependency also didn't help me understand how to fix it. I've also had issues in the past with some Astro plugins like `astro-compress`. No hate to either of those packages' developers, I'm sure they're trying their best, but the point is that this kind of stuff happens.
 
-Anyway, to demonstrate the number of dependencies that different packages have, I built `lsdeps`. There might be other tools like it, but I couldn't find any. It's currently a command line tool, although if there's interest in the project I might build a GUI around it as well. It's not very optimised at the moment, but I'll try to fix that over time. And, to prove the point I've been making, it has no dependencies at all (other than Bun to actually run it, I suppose).
+Anyway, to demonstrate the number of dependencies that different packages have, I built `lsdeps`. There might be other tools like it, but I couldn't find any. It's currently a command line tool, although if there's interest in the project I might build a GUI around it as well. It's not very optimised at the moment, but I'll try to fix that over time. And, to prove the point I've been making, it has no dependencies at all (other than Go to actually run it, I suppose).

@@ -9,37 +9,31 @@ import (
 )
 
 type Package struct {
-	Dependencies map[string]string `json:"dependencies"`
+	Dependencies         map[string]string `json:"dependencies"`
+	PeerDependencies     map[string]string `json:"peerDependencies"`
+	OptionalDependencies map[string]string `json:"optionalDependencies"`
 }
 
-func isInArray(arr []string, val string) bool {
-	for i := range arr {
-		if arr[i] == val {
-			return true
-		}
-	}
-
-	return false
-}
-
-func getDeps(packageName string) ([]string, error) {
-	var deps []string
+func getDeps(packageName string) (map[string]bool, error) {
+	deps := make(map[string]bool)
 	var packageData Package
-
-	r, err0 := http.Get("https://registry.npmjs.com/" + packageName + "/latest")
-	if err0 != nil {
-		return nil, err0
+	r, err := http.Get("https://registry.npmjs.com/" + packageName + "/latest")
+	if err != nil {
+		return nil, err
 	}
-
-	err1 := json.NewDecoder(r.Body).Decode(&packageData)
-	if err1 != nil {
-		return nil, err1
+	err = json.NewDecoder(r.Body).Decode(&packageData)
+	if err != nil {
+		return nil, err
 	}
 
 	for dep := range packageData.Dependencies {
-		if !isInArray(deps, dep) {
-			deps = append(deps, dep)
-		}
+		deps[dep] = true
+	}
+	for dep := range packageData.PeerDependencies {
+		deps[dep] = true
+	}
+	for dep := range packageData.OptionalDependencies {
+		deps[dep] = true
 	}
 
 	return deps, nil
@@ -47,31 +41,22 @@ func getDeps(packageName string) ([]string, error) {
 
 func main() {
 	packageName := os.Args[1]
-
-	fmt.Print("Counting dependencies...")
-
-	pkgDeps, err0 := getDeps(packageName)
-	if err0 != nil {
-		log.Println(err0)
+	depSet, err := getDeps(packageName)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	for d := 0; d < len(pkgDeps); d++ {
-		deps, err1 := getDeps(pkgDeps[d])
-		if err1 != nil {
-			log.Println(err1)
+	for dep := range depSet {
+		deps, err := getDeps(dep)
+		if err != nil {
+			log.Fatal(err)
 		}
-
-		for i := range deps {
-			if !isInArray(pkgDeps, deps[i]) {
-				pkgDeps = append(pkgDeps, deps[i])
-			}
+		for d := range deps {
+			depSet[d] = true
 		}
 	}
 
-	depsCount := len(pkgDeps)
-
-	fmt.Printf("\033[2K\r")
-
+	depsCount := len(depSet)
 	plural := "dependencies"
 	if depsCount == 1 {
 		plural = "dependency"

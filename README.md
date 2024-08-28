@@ -1,7 +1,5 @@
 # lsdeps
 
-## DEPRECATED: Use new [Rust version](https://github.com/noClaps/lsdeps).
-
 This is a CLI tool to show the total number of dependencies that any package has on the npm registry. This includes both direct dependencies, as well as indirect dependencies (dependencies of dependencies, for example). It currently only includes packages listed in the `"dependencies"` key of the `package.json` for the package.
 
 ## Usage

@@ -14,9 +14,21 @@ type Package struct {
 	OptionalDependencies map[string]string `json:"optionalDependencies"`
 }
 
-func getDeps(packageName string) (map[string]bool, error) {
-	deps := make(map[string]bool)
+func contains(deps []string, packageName string) bool {
+	for _, dep := range deps {
+		if dep == packageName {
+			return true
+		}
+	}
+	return false
+}
+
+func getDeps(packageName string) ([]string, error) {
+	fmt.Printf("\033[2KFetching dependencies for %s...", packageName)
+
+	var deps []string
 	var packageData Package
+
 	r, err := http.Get("https://registry.npmjs.com/" + packageName + "/latest")
 	if err != nil {
 		return nil, err
@@ -27,13 +39,13 @@ func getDeps(packageName string) (map[string]bool, error) {
 	}
 
 	for dep := range packageData.Dependencies {
-		deps[dep] = true
+		deps = append(deps, dep)
 	}
 	for dep := range packageData.PeerDependencies {
-		deps[dep] = true
+		deps = append(deps, dep)
 	}
 	for dep := range packageData.OptionalDependencies {
-		deps[dep] = true
+		deps = append(deps, dep)
 	}
 
 	return deps, nil
@@ -46,13 +58,15 @@ func main() {
 		log.Fatal(err)
 	}
 
-	for dep := range depSet {
-		deps, err := getDeps(dep)
+	for i := 0; i < len(depSet); i++ {
+		deps, err := getDeps(depSet[i])
 		if err != nil {
 			log.Fatal(err)
 		}
-		for d := range deps {
-			depSet[d] = true
+		for _, d := range deps {
+			if !contains(depSet, d) {
+				depSet = append(depSet, d)
+			}
 		}
 	}
 
@@ -62,5 +76,5 @@ func main() {
 		plural = "dependency"
 	}
 
-	fmt.Printf("The \"%s\" package has %d %s.\n", packageName, depsCount, plural)
+	fmt.Printf("\033[2KThe \"%s\" package has %d %s.\n", packageName, depsCount, plural)
 }

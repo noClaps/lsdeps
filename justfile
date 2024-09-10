@@ -1,18 +1,22 @@
-default:
+_default:
     @just --list
 
 # Builds the lsdeps binary
 build:
-    @go build -o lsdeps lsdeps.go
-    @echo "Built lsdeps"
+	@swift build -c release
+	@cp ./.build/release/lsdeps .
+	@echo "Built lsdeps"
 
-# Installs the lsdeps binary with Go
-go-install:
-    @go install lsdeps.go
-    @echo "Installed lsdeps with Go"
+# Runs the lsdeps project with the given arguments
+run ARGS:
+    @swift run lsdeps {{ARGS}}
 
 # Installs the lsdeps binary to ~/.local/bin
 install: build
-    @install lsdeps ~/.local/bin
-    @rm lsdeps
+    @install ./lsdeps ~/.local/bin
+    @rm ./lsdeps
     @echo "Installed lsdeps to ~/.local/bin"
+
+# Format all Swift files
+format:
+    @swift-format format -i ./**/*.swift

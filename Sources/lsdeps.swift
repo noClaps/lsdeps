@@ -74,6 +74,8 @@ struct lsdeps: AsyncParsableCommand {
   var skipOptional = false
 
   mutating func run() async throws {
+    print("Fetching dependencies for \(package)")
+
     guard
       var depSet = await getDeps(
         packageName: package, skipPeer: skipPeer, skipOptional: skipOptional)

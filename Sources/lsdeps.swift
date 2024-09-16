@@ -73,8 +73,13 @@ struct lsdeps: AsyncParsableCommand {
     help: "Skip counting optional dependencies")
   var skipOptional = false
 
+  @Flag(name: .long, help: "Hide the \"Fetching dependencies for...\" messages")
+  var silent = false
+
   mutating func run() async throws {
-    print("Fetching dependencies for \(package)")
+    if !silent {
+      print("Fetching dependencies for \(package)")
+    }
 
     guard
       var depSet = await getDeps(
@@ -87,7 +92,9 @@ struct lsdeps: AsyncParsableCommand {
     while i != depSet.count {
       let setPackage = depSet[i]
 
-      print("Fetching dependencies for \(setPackage)")
+      if !silent {
+        print("Fetching dependencies for \(setPackage)")
+      }
 
       guard
         let deps = await getDeps(

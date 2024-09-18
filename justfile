@@ -16,7 +16,3 @@ install: build
     @install ./lsdeps ~/.local/bin
     @rm ./lsdeps
     @echo "Installed lsdeps to ~/.local/bin"
-
-# Format all Swift files
-format:
-    @swift-format format -i ./**/*.swift

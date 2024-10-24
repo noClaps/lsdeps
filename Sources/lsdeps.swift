@@ -7,57 +7,75 @@ struct Package: Decodable {
     let optionalDependencies: [String: String]?
 }
 
-func fetch(url: String) async -> Package? {
+func fetch(url: String) async throws -> Package? {
     guard let urlObject = URL(string: url) else {
         print("Error parsing URL: \(url)")
         return nil
     }
 
-    guard let (data, _) = try? await URLSession.shared.data(from: urlObject)
-    else {
-        print("Error parsing JSON")
-        return nil
-    }
-
-    guard let package = try? JSONDecoder().decode(Package.self, from: data)
-    else {
-        print("Error decoding data: \(data)")
-        return nil
-    }
+    let (data, _) = try await URLSession.shared.data(from: urlObject)
+    let package = try JSONDecoder().decode(Package.self, from: data)
 
     return package
 }
 
-func getDeps(packageName: String, skipPeer: Bool, skipOptional: Bool) async
-    -> [String]?
+func parseVersion(version: String) throws -> String {
+    let versionRegex = #/([0-9]\.[0-9]\.[0-9])(-(alpha|beta|rc)\.[0-9]+)?/#
+    if try versionRegex.wholeMatch(in: version) != nil {
+        return version
+    }
+
+    let versionStart = version[version.startIndex]
+    let versionNumber = version[version.index(version.startIndex, offsetBy: 1)...]
+    if versionStart == "^" || versionStart == "~",
+        try versionRegex.wholeMatch(in: versionNumber) != nil
+    {
+        return String(versionNumber)
+    }
+
+    if version == "next" { return version }
+
+    return "latest"
+}
+
+func getDeps(packageName: String, skipPeer: Bool, skipOptional: Bool, version: String)
+    async throws
+    -> [String: String]?
 {
-    var deps: [String] = []
+    let version = try parseVersion(version: version)
+    var deps: [String: String] = [:]
     guard
-        let packageData = await fetch(
-            url: "https://registry.npmjs.com/\(packageName)/latest")
+        let packageData = try await fetch(
+            url: "https://registry.npmjs.com/\(packageName)/\(version)")
     else {
-        print("Error fetching dependencies for package \(packageName)")
+        print("Error fetching dependencies for package \(packageName)@\(version)")
         return nil
     }
 
     if let dependencies = packageData.dependencies {
-        for dep in dependencies.keys {
-            if !deps.contains(dep) {
-                deps.append(dep)
+        for (dep, version) in dependencies {
+            if !deps.contains(where: { (key: String, value: String) in
+                key == dep && value == version
+            }) {
+                deps[dep] = version
             }
         }
     }
     if !skipPeer, let dependencies = packageData.peerDependencies {
-        for dep in dependencies.keys {
-            if !deps.contains(dep) {
-                deps.append(dep)
+        for (dep, version) in dependencies {
+            if !deps.contains(where: { (key: String, value: String) in
+                key == dep && value == version
+            }) {
+                deps[dep] = version
             }
         }
     }
     if !skipOptional, let dependencies = packageData.optionalDependencies {
-        for dep in dependencies.keys {
-            if !deps.contains(dep) {
-                deps.append(dep)
+        for (dep, version) in dependencies {
+            if !deps.contains(where: { (key: String, value: String) in
+                key == dep && value == version
+            }) {
+                deps[dep] = version
             }
         }
     }
@@ -67,54 +85,61 @@ func getDeps(packageName: String, skipPeer: Bool, skipOptional: Bool) async
 
 @main
 struct lsdeps: AsyncParsableCommand {
-    @Argument(help: "The npm package to count dependencies for")
+    @Argument(help: "The npm package to count dependencies for.")
     var package: String
 
     @Flag(
         name: [.customShort("p", allowingJoined: true), .long],
-        help: "Skip counting peer dependencies")
+        help: "Skip counting peer dependencies.")
     var skipPeer = false
 
     @Flag(
         name: [.customShort("o", allowingJoined: true), .long],
-        help: "Skip counting optional dependencies")
+        help: "Skip counting optional dependencies.")
     var skipOptional = false
 
     @Flag(
-        name: .long, help: "Hide the \"Fetching dependencies for...\" messages")
+        name: .long, help: "Hide the \"Fetching dependencies for...\" messages.")
     var silent = false
+
+    @Option(name: .shortAndLong, help: "The version of the package being fetched.")
+    var version = "latest"
 
     mutating func run() async throws {
         if !silent {
-            print("Fetching dependencies for \(package)")
+            print("Fetching dependencies for \(package)@\(version)")
         }
 
         guard
-            var depSet = await getDeps(
+            var depSet = try await getDeps(
                 packageName: package, skipPeer: skipPeer,
-                skipOptional: skipOptional)
+                skipOptional: skipOptional, version: version)
         else {
             return
         }
 
         var i = 0
         while i != depSet.count {
-            let setPackage = depSet[i]
+            let setPackage = Array(depSet.keys)[i]
+            let setPackageVersion = depSet[setPackage]!
 
             if !silent {
-                print("Fetching dependencies for \(setPackage)")
+                print("Fetching dependencies for \(setPackage)@\(setPackageVersion)")
             }
 
             guard
-                let deps = await getDeps(
+                let deps = try await getDeps(
                     packageName: setPackage, skipPeer: skipPeer,
-                    skipOptional: skipOptional)
+                    skipOptional: skipOptional, version: setPackageVersion)
             else {
                 continue
             }
-            for dep in deps {
-                if !depSet.contains(dep) {
-                    depSet.append(dep)
+
+            for (dep, version) in deps {
+                if !depSet.contains(where: { (key: String, value: String) in
+                    key == dep && value == version
+                }) {
+                    depSet[dep] = version
                 }
             }
             i += 1
@@ -126,7 +151,7 @@ struct lsdeps: AsyncParsableCommand {
             """
 
             Name: \(package)
-            URL: https://npmjs.com/package/\(package)
+            URL: https://npmjs.com/package/\(package)/v/\(version)
             Dependency count: \(depsCount)
 
             """)

@@ -69,11 +69,23 @@ func parseVersion(version: String) throws -> String {
     return "latest"
 }
 
-func getDeps(packageName: String, skipPeer: Bool, skipOptional: Bool, version: String)
+func getDeps(
+    packageName name: String, skipPeer: Bool, skipOptional: Bool, version packageVersion: String
+)
     async throws
     -> [String: String]?
 {
-    let version = try parseVersion(version: version)
+    var version = packageVersion
+    var packageName = name
+    if packageVersion.prefix(4) == "npm:" {
+        let actualPackage = version.suffix(version.count - 4).split(
+            separator: "@", maxSplits: 1)
+        packageName = String(actualPackage[0])
+        version = String(actualPackage[1])
+    }
+
+    version = try parseVersion(version: version)
+
     var deps: [String: String] = [:]
     guard
         let packageData = await fetch(
@@ -127,6 +139,13 @@ struct lsdeps: AsyncParsableCommand {
     mutating func run() async throws {
         if !silent {
             print("Fetching dependencies for \(package)@\(version)")
+        }
+
+        if version.prefix(4) == "npm:" {
+            let actualPackage = version.suffix(version.count - 4).split(
+                separator: "@", maxSplits: 1)
+            package = String(actualPackage[0])
+            version = String(actualPackage[1])
         }
 
         guard

@@ -141,6 +141,8 @@ struct lsdeps: AsyncParsableCommand {
             print("Fetching dependencies for \(package)@\(version)")
         }
 
+        var depSet: [String] = []
+
         if version.prefix(4) == "npm:" {
             let actualPackage = version.suffix(version.count - 4).split(
                 separator: "@", maxSplits: 1)
@@ -149,17 +151,16 @@ struct lsdeps: AsyncParsableCommand {
         }
 
         guard
-            var depSet = try await getDeps(
+            var queue = try await getDeps(
                 packageName: package, skipPeer: skipPeer,
                 skipOptional: skipOptional, version: version)
         else {
             return
         }
 
-        var i = 0
-        while i != depSet.count {
-            let setPackage = Array(depSet.keys)[i]
-            let setPackageVersion = depSet[setPackage]!
+        while queue.count != 0 {
+            let setPackage = Array(queue.keys)[0]
+            let setPackageVersion = queue[setPackage]!
 
             if !silent {
                 print("Fetching dependencies for \(setPackage)@\(setPackageVersion)")
@@ -170,17 +171,20 @@ struct lsdeps: AsyncParsableCommand {
                     packageName: setPackage, skipPeer: skipPeer,
                     skipOptional: skipOptional, version: setPackageVersion)
             else {
+                queue.removeValue(forKey: setPackage)
                 continue
             }
 
             for (dep, version) in deps {
-                if !depSet.contains(where: { (key: String, value: String) in
-                    key == dep && value == version
-                }) {
-                    depSet[dep] = version
+                if !queue.keys.contains(dep), !depSet.contains(dep) {
+                    queue[dep] = version
+                }
+
+                if !depSet.contains(dep) {
+                    depSet.append(dep)
                 }
             }
-            i += 1
+            queue.removeValue(forKey: setPackage)
         }
 
         let depsCount = depSet.count

@@ -85,29 +85,17 @@ func getDeps(packageName: String, skipPeer: Bool, skipOptional: Bool, version: S
 
     if let dependencies = packageData.dependencies {
         for (dep, version) in dependencies {
-            if !deps.contains(where: { (key: String, value: String) in
-                key == dep && value == version
-            }) {
-                deps[dep] = version
-            }
+            deps[dep] = version
         }
     }
     if !skipPeer, let dependencies = packageData.peerDependencies {
         for (dep, version) in dependencies {
-            if !deps.contains(where: { (key: String, value: String) in
-                key == dep && value == version
-            }) {
-                deps[dep] = version
-            }
+            deps[dep] = version
         }
     }
     if !skipOptional, let dependencies = packageData.optionalDependencies {
         for (dep, version) in dependencies {
-            if !deps.contains(where: { (key: String, value: String) in
-                key == dep && value == version
-            }) {
-                deps[dep] = version
-            }
+            deps[dep] = version
         }
     }
 

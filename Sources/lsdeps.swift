@@ -7,14 +7,45 @@ struct Package: Decodable {
     let optionalDependencies: [String: String]?
 }
 
-func fetch(url: String) async throws -> Package? {
+extension Data {
+    func toJSON<T>(_ type: T.Type) throws -> T where T: Decodable {
+        return try JSONDecoder().decode(T.self, from: self)
+    }
+
+    func toString() -> String {
+        return String(decoding: self, as: UTF8.self)
+    }
+}
+
+func fetch(url: String) async -> Package? {
     guard let urlObject = URL(string: url) else {
         print("Error parsing URL: \(url)")
         return nil
     }
 
-    let (data, _) = try await URLSession.shared.data(from: urlObject)
-    let package = try JSONDecoder().decode(Package.self, from: data)
+    var data: Data
+    do {
+        (data, _) = try await URLSession.shared.data(from: urlObject)
+    } catch {
+        print("Error fetching dependencies")
+        print(error)
+        return nil
+    }
+
+    var package: Package
+    do {
+        package = try data.toJSON(Package.self)
+    } catch {
+        let errorVal = data.toString()
+        if errorVal == "\"Not Found\"" {
+            print("Package doesn't exist")
+            return nil
+        }
+
+        print("Error decoding JSON")
+        print(error)
+        return nil
+    }
 
     return package
 }
@@ -45,7 +76,7 @@ func getDeps(packageName: String, skipPeer: Bool, skipOptional: Bool, version: S
     let version = try parseVersion(version: version)
     var deps: [String: String] = [:]
     guard
-        let packageData = try await fetch(
+        let packageData = await fetch(
             url: "https://registry.npmjs.com/\(packageName)/\(version)")
     else {
         print("Error fetching dependencies for package \(packageName)@\(version)")

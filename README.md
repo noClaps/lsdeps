@@ -14,13 +14,13 @@ This is a CLI tool to show the total number of dependencies that any package has
 2. Run the project.
 
    ```sh
-   just run astro # You can give it a package name as a command line argument.
+   swift run lsdeps astro # You can give it a package name as a command line argument.
    ```
 
 3. (Optional) Compile the script to a binary.
 
    ```sh
-   just build
+   make build
    ```
    You can then place it in your `PATH` and call it from anywhere.
 

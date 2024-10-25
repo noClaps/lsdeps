@@ -162,6 +162,8 @@ struct lsdeps: AsyncParsableCommand {
             let setPackage = Array(queue.keys)[0]
             let setPackageVersion = queue[setPackage]!
 
+            depSet.append(setPackage)
+
             if !silent {
                 print("Fetching dependencies for \(setPackage)@\(setPackageVersion)")
             }
@@ -176,12 +178,8 @@ struct lsdeps: AsyncParsableCommand {
             }
 
             for (dep, version) in deps {
-                if !queue.keys.contains(dep), !depSet.contains(dep) {
+                if queue[dep] == nil, !depSet.contains(dep) {
                     queue[dep] = version
-                }
-
-                if !depSet.contains(dep) {
-                    depSet.append(dep)
                 }
             }
             queue.removeValue(forKey: setPackage)

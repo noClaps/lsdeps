@@ -14,7 +14,7 @@ This is a CLI tool to show the total number of dependencies that any package has
 2. Run the project.
 
    ```sh
-   swift run lsdeps astro # You can give it a package name as a command line argument.
+   go run lsdeps astro # You can give it a package name as a command line argument.
    ```
 
 3. (Optional) Compile the script to a binary.

@@ -3,8 +3,7 @@ _default:
 
 # Builds the lsdeps binary
 build:
-	@swift build -c release
-	@cp ./.build/release/lsdeps .
+	@go build
 	@echo "Built lsdeps"
 
 # Installs the lsdeps binary to ~/.local/bin

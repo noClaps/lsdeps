@@ -9,8 +9,6 @@ import (
 	"regexp"
 	"slices"
 	"strings"
-
-	"github.com/alexflint/go-arg"
 )
 
 type Package struct {
@@ -99,20 +97,58 @@ var args struct {
 	Package      string `arg:"positional,required" help:"The npm package to count dependencies for."`
 	SkipOptional bool   `arg:"-o,--skip-optional" help:"Skip counting optional dependencies."`
 	SkipPeer     bool   `arg:"-p,--skip-peer" help:"Skip counting peer dependencies."`
-	Silent       bool   `help:"Hide the \"Fetching dependencies for...\" messages."`
 	Version      string `help:"The version of the package being fetched."`
+	Help         bool   `arg:"-h,--help" help:"Display this help message and exit"`
+}
+
+func parseArgs(argv []string) {
+	for i := range argv {
+		if argv[i][0] == '-' {
+			// Flag or option
+			switch argv[i] {
+			case "-o", "--skip-optional":
+				args.SkipOptional = true
+			case "-p", "--skip-peer":
+				args.SkipPeer = true
+			case "-h", "--help":
+				args.Help = true
+			case "--version":
+				args.Version = argv[i+1]
+				i += 2
+			}
+		} else {
+			if i == 0 || argv[i-1] != "--version" {
+				args.Package = argv[i]
+			}
+		}
+	}
 }
 
 func main() {
-	arg.MustParse(&args)
+	parseArgs(os.Args[1:])
+
+	if args.Help {
+		fmt.Printf(`
+USAGE: lsdeps <package> [--skip-optional] [--skip-peer] [--silent] [--version <version>]
+
+ARGUMENTS:
+  <package>              The npm package to count dependencies for.
+
+OPTIONS:
+  --skip-optional, -o    Skip counting optional dependencies.
+  --skip-peer, -p        Skip counting peer dependencies.
+  --version <version>    The version of the package being fetched.
+  --help, -h             Display this help message and exit.
+
+`)
+		return
+	}
 
 	if args.Version == "" {
 		args.Version = "latest"
 	}
 
-	if !args.Silent {
-		fmt.Printf("Fetching dependencies for %s@%s", args.Package, args.Version)
-	}
+	fmt.Printf("Fetching dependencies for %s@%s", args.Package, args.Version)
 
 	depSet := []string{}
 	if len(args.Version) >= 4 && args.Version[:4] == "npm:" {
@@ -136,9 +172,7 @@ func main() {
 
 			depSet = append(depSet, setPackage)
 
-			if !args.Silent {
-				fmt.Printf("\033[2K\rFetching dependencies for %s@%s", setPackage, setPackageVersion)
-			}
+			fmt.Printf("\033[2K\rFetching dependencies for %s@%s", setPackage, setPackageVersion)
 
 			deps, err := getDeps(setPackage, args.SkipPeer, args.SkipOptional, setPackageVersion)
 			if err != nil {

@@ -3,12 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"maps"
 	"net/http"
 	"os"
 	"regexp"
-	"slices"
 	"strings"
+	"sync"
 )
 
 type Package struct {
@@ -163,34 +162,44 @@ OPTIONS:
 		return
 	}
 
-	for len(queue) != 0 {
-		q := make(chan string)
+	var wg sync.WaitGroup // To stop code from continuing before all async tasks are finished
+	var mu sync.Mutex     // To lock reading and writing shared values
 
-		go func() {
-			setPackage := slices.Collect(maps.Keys(queue))[0]
-			setPackageVersion := queue[setPackage]
+	for len(queue) > 0 {
+		mu.Lock()
+		currentQueue := queue
+		queue = make(map[string]string)
+		mu.Unlock()
 
-			depSet[setPackage] = true
-
-			fmt.Printf("\033[2K\rFetching dependencies for %s@%s", setPackage, setPackageVersion)
-			deps, err := getDeps(setPackage, args.SkipPeer, args.SkipOptional, setPackageVersion)
-			if err != nil {
-				logErrorf("\nERROR: Package %s@%s does not exist\n", setPackage, setPackageVersion)
-				q <- setPackage
-				close(q)
-				return
-			}
-
-			for dep, version := range deps {
-				if _, ok := queue[dep]; !ok && !depSet[dep] {
-					queue[dep] = version
+		for setPackage, setPackageVersion := range currentQueue {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				mu.Lock()
+				if depSet[setPackage] {
+					mu.Unlock()
+					return
 				}
-			}
-			q <- setPackage
-			close(q)
-		}()
+				depSet[setPackage] = true
+				mu.Unlock()
 
-		delete(queue, <-q)
+				fmt.Printf("\033[2K\rFetching dependencies for %s@%s", setPackage, setPackageVersion)
+				deps, err := getDeps(setPackage, args.SkipPeer, args.SkipOptional, setPackageVersion)
+				if err != nil {
+					logErrorf("\nERROR: Package %s@%s does not exist\n", setPackage, setPackageVersion)
+					return
+				}
+
+				mu.Lock()
+				for dep, version := range deps {
+					if !depSet[dep] {
+						queue[dep] = version
+					}
+				}
+				mu.Unlock()
+			}()
+		}
+		wg.Wait()
 	}
 
 	fmt.Printf("\033[2K\r")

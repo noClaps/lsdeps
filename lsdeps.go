@@ -150,7 +150,7 @@ OPTIONS:
 
 	fmt.Printf("Fetching dependencies for %s@%s", args.Package, args.Version)
 
-	depSet := []string{}
+	depSet := map[string]bool{}
 	if len(args.Version) >= 4 && args.Version[:4] == "npm:" {
 		actualPackage := strings.SplitN(args.Version[4:], "@", 2)
 		args.Package = actualPackage[0]
@@ -170,10 +170,9 @@ OPTIONS:
 			setPackage := slices.Collect(maps.Keys(queue))[0]
 			setPackageVersion := queue[setPackage]
 
-			depSet = append(depSet, setPackage)
+			depSet[setPackage] = true
 
 			fmt.Printf("\033[2K\rFetching dependencies for %s@%s", setPackage, setPackageVersion)
-
 			deps, err := getDeps(setPackage, args.SkipPeer, args.SkipOptional, setPackageVersion)
 			if err != nil {
 				logErrorf("\nERROR: Package %s@%s does not exist\n", setPackage, setPackageVersion)
@@ -183,7 +182,7 @@ OPTIONS:
 			}
 
 			for dep, version := range deps {
-				if _, ok := queue[dep]; !ok && !slices.Contains(depSet, dep) {
+				if _, ok := queue[dep]; !ok && !depSet[dep] {
 					queue[dep] = version
 				}
 			}
@@ -194,13 +193,11 @@ OPTIONS:
 		delete(queue, <-q)
 	}
 
-	depsCount := len(depSet)
-
 	fmt.Printf("\033[2K\r")
 	fmt.Printf(`
 Name: %s
 URL: https://npmjs.com/package/%s/v/%s
 Dependency count: %d
 
-`, args.Package, args.Package, args.Version, depsCount)
+`, args.Package, args.Package, args.Version, len(depSet))
 }

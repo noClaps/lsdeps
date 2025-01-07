@@ -96,7 +96,7 @@ func logErrorf(format string, a ...any) {
 
 func findArg(argv []string) (string, []string) {
 	for i := range argv {
-		if i == 0 || argv[i-1][0] != '-' {
+		if (i == 0 && argv[i][0] != '-') || (i-1 >= 0 && argv[i-1][0] != '-') {
 			return argv[i], slices.Concat(argv[:i], argv[i+1:])
 		}
 	}

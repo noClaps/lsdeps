@@ -2,10 +2,12 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"net/http"
 	"os"
 	"regexp"
+	"slices"
 	"strings"
 	"sync"
 )
@@ -92,43 +94,39 @@ func logErrorf(format string, a ...any) {
 	fmt.Fprintf(os.Stderr, fmt.Sprintf("\033[31m%s\033[0m", format), a...)
 }
 
-var args struct {
-	Package      string `arg:"positional,required" help:"The npm package to count dependencies for."`
-	SkipOptional bool   `arg:"-o,--skip-optional" help:"Skip counting optional dependencies."`
-	SkipPeer     bool   `arg:"-p,--skip-peer" help:"Skip counting peer dependencies."`
-	Version      string `help:"The version of the package being fetched."`
-	Help         bool   `arg:"-h,--help" help:"Display this help message and exit"`
-}
-
-func parseArgs(argv []string) {
+func findArg(argv []string) (string, []string) {
 	for i := range argv {
-		if argv[i][0] == '-' {
-			// Flag or option
-			switch argv[i] {
-			case "-o", "--skip-optional":
-				args.SkipOptional = true
-			case "-p", "--skip-peer":
-				args.SkipPeer = true
-			case "-h", "--help":
-				args.Help = true
-			case "--version":
-				args.Version = argv[i+1]
-				i += 2
-			}
-		} else {
-			if i == 0 || argv[i-1] != "--version" {
-				args.Package = argv[i]
-			}
+		if i == 0 || argv[i-1][0] != '-' {
+			return argv[i], slices.Concat(argv[:i], argv[i+1:])
 		}
 	}
+
+	return "", argv
 }
 
 func main() {
-	parseArgs(os.Args[1:])
+	var skipOptional bool
+	flag.BoolVar(&skipOptional, "skip-optional", false, "Skip counting optional dependencies.")
+	flag.BoolVar(&skipOptional, "o", false, "Skip counting optional dependencies.")
 
-	if args.Help {
+	var skipPeer bool
+	flag.BoolVar(&skipPeer, "skip-peer", false, "Skip counting peer dependencies.")
+	flag.BoolVar(&skipPeer, "p", false, "Skip counting peer dependencies.")
+
+	var version string
+	flag.StringVar(&version, "version", "latest", "The version of the package being fetched.")
+
+	var help bool
+	flag.BoolVar(&help, "help", false, "Display this help message and exit.")
+	flag.BoolVar(&help, "h", false, "Display this help message and exit.")
+
+	packageName, remainingArgs := findArg(os.Args[1:])
+
+	err := flag.CommandLine.Parse(remainingArgs)
+
+	if help || err != nil {
 		fmt.Printf(`
-USAGE: lsdeps <package> [--skip-optional] [--skip-peer] [--silent] [--version <version>]
+USAGE: lsdeps <package> [--skip-optional] [--skip-peer] [--version <version>]
 
 ARGUMENTS:
   <package>              The npm package to count dependencies for.
@@ -143,22 +141,23 @@ OPTIONS:
 		return
 	}
 
-	if args.Version == "" {
-		args.Version = "latest"
+	if packageName == "" {
+		fmt.Println("USAGE: lsdeps <package> [--skip-optional] [--skip-peer] [--version <version>]")
+		os.Exit(1)
 	}
 
-	fmt.Printf("Fetching dependencies for %s@%s", args.Package, args.Version)
+	fmt.Printf("Fetching dependencies for %s@%s", packageName, version)
 
 	depSet := map[string]bool{}
-	if len(args.Version) >= 4 && args.Version[:4] == "npm:" {
-		actualPackage := strings.SplitN(args.Version[4:], "@", 2)
-		args.Package = actualPackage[0]
-		args.Version = actualPackage[1]
+	if len(version) >= 4 && version[:4] == "npm:" {
+		actualPackage := strings.SplitN(version[4:], "@", 2)
+		packageName = actualPackage[0]
+		version = actualPackage[1]
 	}
 
-	queue, err := getDeps(args.Package, args.SkipPeer, args.SkipOptional, args.Version)
+	queue, err := getDeps(packageName, skipPeer, skipOptional, version)
 	if err != nil {
-		logErrorf("\nERROR: Package %s@%s does not exist\n", args.Package, args.Version)
+		logErrorf("\nERROR: Package %s@%s does not exist\n", packageName, version)
 		return
 	}
 
@@ -184,7 +183,7 @@ OPTIONS:
 				mu.Unlock()
 
 				fmt.Printf("\033[2K\rFetching dependencies for %s@%s", setPackage, setPackageVersion)
-				deps, err := getDeps(setPackage, args.SkipPeer, args.SkipOptional, setPackageVersion)
+				deps, err := getDeps(setPackage, skipPeer, skipOptional, setPackageVersion)
 				if err != nil {
 					logErrorf("\nERROR: Package %s@%s does not exist\n", setPackage, setPackageVersion)
 					return
@@ -208,5 +207,5 @@ Name: %s
 URL: https://npmjs.com/package/%s/v/%s
 Dependency count: %d
 
-`, args.Package, args.Package, args.Version, len(depSet))
+`, packageName, packageName, version, len(depSet))
 }

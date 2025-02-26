@@ -2,27 +2,82 @@
 
 This is a CLI tool to show the total number of dependencies that any package has on the npm registry. This includes both direct dependencies, as well as indirect dependencies (dependencies of dependencies, for example). It currently includes packages listed in the `"dependencies"`, `"peerDependencies"` and `"optionalDependencies"` keys of the `package.json` for the package.
 
+## Installation
+
+You can install it using Homebrew on macOS/Linux:
+
+```sh
+brew install noclaps/tap/lsdeps
+```
+
+or you can build from source:
+
+```sh
+git clone https://gitlab.com/noClaps/lsdeps.git && cd lsdeps
+go build
+```
+
 ## Usage
 
-1. Clone the repository
+```
+USAGE: lsdeps <package> [--skip-optional] [--skip-peer] [--version <version>]
 
-   ```sh
-   git clone https://gitlab.com/noClaps/lsdeps.git
-   cd lsdeps
-   ```
+ARGUMENTS:
+  <package>              The npm package to count dependencies for.
 
-2. Run the project.
+OPTIONS:
+  --skip-optional, -o    Skip counting optional dependencies.
+  --skip-peer, -p        Skip counting peer dependencies.
+  --version <version>    The version of the package being fetched.
+  --help, -h             Display this help message and exit.
+```
 
-   ```sh
-   go run lsdeps astro # You can give it a package name as a command line argument.
-   ```
+You can use the tool simply by running:
 
-3. (Optional) Compile the script to a binary.
+```sh
+lsdeps astro # or any other package on npm
+```
 
-   ```sh
-   make build
-   ```
-   You can then place it in your `PATH` and call it from anywhere.
+You can also skip counting peer dependencies with the `-p` or `--skip-peer` flag:
+
+```sh
+lsdeps astro -p
+lsdeps astro --skip-peer
+```
+
+and optional dependencies with the `-o` or `--skip-optional` flag:
+
+```sh
+lsdeps astro -o
+lsdeps astro --skip-optional
+```
+
+If you want to skip both, you can chain them together:
+
+```sh
+# All of these do the same thing
+lsdeps astro -o -p
+lsdeps astro -p -o
+lsdeps astro --skip-peer --skip-optional
+lsdeps astro --skip-optional --skip-peer
+```
+
+You can fetch dependencies for a specific package version with the `-v` or `--version` option:
+
+```sh
+lsdeps astro -v 4.0.0
+```
+
+The valid values for version are `latest`, `next` and a specific semantic version like `1.0.0` or `1.5.0-beta.1`. If the version cannot be parsed, `latest` is used instead.
+
+**NOTE**: The version parsing is not perfect and likely needs to be rewritten in a much better way. However, it works in the meantime.
+
+You can view the help by using `-h` or `--help`:
+
+```sh
+lsdeps -h
+lsdeps --help
+```
 
 ## Motivation
 

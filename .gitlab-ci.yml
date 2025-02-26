@@ -17,6 +17,9 @@ deploy_formula:
     - git config --global user.name "GitLab CI"
     - git config --global user.email "gitlab-ci@example.com"
 
+    - echo ${GITHUB_TOKEN:0:4}
+    - echo ${TAP_REPO}
+
     # Clone tap repo using HTTPS with token and trigger workflow
     - git clone https://oauth2:${GITHUB_TOKEN}@github.com/${TAP_REPO}.git tap
     - cd tap

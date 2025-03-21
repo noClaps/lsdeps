@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"maps"
 	"net/http"
 	"os"
 	"regexp"
@@ -72,19 +73,13 @@ func getDeps(name string, skipPeer bool, skipOptional bool, version string) (map
 	}
 
 	if len(packageData.Dependencies) != 0 {
-		for dep, version := range packageData.Dependencies {
-			deps[dep] = version
-		}
+		maps.Copy(deps, packageData.Dependencies)
 	}
 	if !skipPeer && len(packageData.PeerDependencies) != 0 {
-		for dep, version := range packageData.PeerDependencies {
-			deps[dep] = version
-		}
+		maps.Copy(deps, packageData.PeerDependencies)
 	}
 	if !skipOptional && len(packageData.OptionalDependencies) != 0 {
-		for dep, version := range packageData.OptionalDependencies {
-			deps[dep] = version
-		}
+		maps.Copy(deps, packageData.OptionalDependencies)
 	}
 
 	return deps, nil

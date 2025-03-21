@@ -13,7 +13,7 @@ brew install noclaps/tap/lsdeps
 or you can build from source:
 
 ```sh
-git clone https://gitlab.com/noClaps/lsdeps.git && cd lsdeps
+git clone https://github.com/noClaps/lsdeps.git && cd lsdeps
 go build
 ```
 

@@ -1,0 +1,27 @@
+on:
+  push:
+    tags: ["*"]
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        versions:
+          - os: macos-latest
+            goos: darwin
+            goarch: arm64
+          - os: ubuntu-latest
+            goos: linux
+            goarch: amd64
+    runs-on: ${{ matrix.versions.os }}
+    name: ${{ matrix.versions.goos }}-${{ matrix.versions.goarch }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: GOOS=${{ matrix.versions.goos }} GOARCH=${{ matrix.versions.goarch }} go build -o lsdeps-${{ github.ref_name }}-${{ matrix.versions.goos }}-${{ matrix.versions.goarch }}
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: lsdeps-${{ github.ref_name }}-${{ matrix.versions.goos }}-${{ matrix.versions.goarch }}

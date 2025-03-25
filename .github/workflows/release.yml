@@ -2,6 +2,9 @@ on:
   push:
     tags: ["*"]
 
+permissions:
+  contents: write
+
 jobs:
   build:
     strategy:

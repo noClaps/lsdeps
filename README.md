@@ -7,7 +7,7 @@ This is a CLI tool to show the total number of dependencies that any package has
 You can install it using Go:
 
 ```sh
-go install github.com/noClaps/lsdeps
+go install github.com/noClaps/lsdeps@latest
 ```
 
 or download one of the prebuilt binaries in [Releases](https://github.com/noClaps/lsdeps/releases).

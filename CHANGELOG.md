@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.2.1
+
+- Bump Go version in `go.mod`.
+
 ## v0.2.0
 
 ### Breaking changes

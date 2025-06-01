@@ -2,15 +2,15 @@ package main
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
 	"maps"
 	"net/http"
 	"os"
 	"regexp"
-	"slices"
 	"strings"
 	"sync"
+
+	"github.com/noclaps/applause"
 )
 
 type Package struct {
@@ -89,58 +89,19 @@ func logErrorf(format string, a ...any) {
 	fmt.Fprintf(os.Stderr, fmt.Sprintf("\033[31m%s\033[0m", format), a...)
 }
 
-func findArg(argv []string) (string, []string) {
-	for i := range argv {
-		if (i == 0 && argv[i][0] != '-') || (i-1 >= 0 && argv[i-1][0] != '-') {
-			return argv[i], slices.Concat(argv[:i], argv[i+1:])
-		}
-	}
-
-	return "", argv
+type Args struct {
+	Package      string `help:"The npm package to count dependencies for."`
+	SkipOptional bool   `type:"option" short:"o" help:"Skip counting optional dependencies."`
+	SkipPeer     bool   `type:"option" short:"p" help:"Skip counting peer dependencies"`
+	Version      string `type:"option" help:"The version of the package being fetched."`
 }
 
 func main() {
-	var skipOptional bool
-	flag.BoolVar(&skipOptional, "skip-optional", false, "Skip counting optional dependencies.")
-	flag.BoolVar(&skipOptional, "o", false, "Skip counting optional dependencies.")
+	args := Args{Version: "latest"}
+	err := applause.Parse(&args)
 
-	var skipPeer bool
-	flag.BoolVar(&skipPeer, "skip-peer", false, "Skip counting peer dependencies.")
-	flag.BoolVar(&skipPeer, "p", false, "Skip counting peer dependencies.")
-
-	var version string
-	flag.StringVar(&version, "version", "latest", "The version of the package being fetched.")
-
-	var help bool
-	flag.BoolVar(&help, "help", false, "Display this help message and exit.")
-	flag.BoolVar(&help, "h", false, "Display this help message and exit.")
-
-	packageName, remainingArgs := findArg(os.Args[1:])
-
-	err := flag.CommandLine.Parse(remainingArgs)
-
-	if help || err != nil {
-		fmt.Printf(`
-USAGE: lsdeps <package> [--skip-optional] [--skip-peer] [--version <version>]
-
-ARGUMENTS:
-  <package>              The npm package to count dependencies for.
-
-OPTIONS:
-  --skip-optional, -o    Skip counting optional dependencies.
-  --skip-peer, -p        Skip counting peer dependencies.
-  --version <version>    The version of the package being fetched.
-  --help, -h             Display this help message and exit.
-
-`)
-		return
-	}
-
-	if packageName == "" {
-		fmt.Println("USAGE: lsdeps <package> [--skip-optional] [--skip-peer] [--version <version>]")
-		os.Exit(1)
-	}
-
+	packageName := args.Package
+	version := args.Version
 	fmt.Printf("Fetching dependencies for %s@%s", packageName, version)
 
 	depSet := map[string]bool{}
@@ -150,7 +111,7 @@ OPTIONS:
 		version = actualPackage[1]
 	}
 
-	queue, err := getDeps(packageName, skipPeer, skipOptional, version)
+	queue, err := getDeps(packageName, args.SkipPeer, args.SkipOptional, version)
 	if err != nil {
 		logErrorf("\nERROR: Package %s@%s does not exist\n", packageName, version)
 		return
@@ -178,7 +139,7 @@ OPTIONS:
 				mu.Unlock()
 
 				fmt.Printf("\033[2K\rFetching dependencies for %s@%s", setPackage, setPackageVersion)
-				deps, err := getDeps(setPackage, skipPeer, skipOptional, setPackageVersion)
+				deps, err := getDeps(setPackage, args.SkipPeer, args.SkipOptional, setPackageVersion)
 				if err != nil {
 					logErrorf("\nERROR: Package %s@%s does not exist\n", setPackage, setPackageVersion)
 					return

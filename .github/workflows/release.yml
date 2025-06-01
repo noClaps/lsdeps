@@ -25,6 +25,27 @@ jobs:
         with:
           go-version-file: go.mod
       - run: GOOS=${{ matrix.versions.goos }} GOARCH=${{ matrix.versions.goarch }} go build -o lsdeps-${{ matrix.versions.goos }}-${{ matrix.versions.goarch }}
+      - run: tar -czf lsdeps-${{ matrix.versions.goos }}-${{ matrix.versions.goarch }}.tar.gz lsdeps-${{ matrix.versions.goos }}-${{ matrix.versions.goarch }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lsdeps-${{ matrix.versions.goos }}-${{ matrix.versions.goarch }}
+          path: lsdeps-${{ matrix.versions.goos }}-${{ matrix.versions.goarch }}.tar.gz
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/download-artifact@v4
       - uses: softprops/action-gh-release@v2
         with:
-          files: lsdeps-${{ matrix.versions.goos }}-${{ matrix.versions.goarch }}
+          files: |
+            lsdeps-darwin-arm64.tar.gz
+            lsdeps-linux-amd64.tar.gz
+      - uses: noClaps/homebrew-tap-action@v1
+        with:
+          tap_repo: noClaps/homebrew-tap
+          formula_name: lsdeps
+          version: ${{ github.ref_name }}
+          tap_token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          macos_file: lsdeps-darwin-arm64.tar.gz
+          linux_file: lsdeps-linux-amd64.tar.gz

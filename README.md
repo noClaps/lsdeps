@@ -4,13 +4,7 @@ This is a CLI tool to show the total number of dependencies that any package has
 
 ## Installation
 
-You can install it using Homebrew:
-
-```sh
-brew install noClaps/tap/lsdeps
-```
-
-or build it from source using Go:
+You can build it from source using Go:
 
 ```sh
 go install github.com/noClaps/lsdeps@latest

@@ -43,7 +43,7 @@ jobs:
           files: |
             lsdeps-darwin-arm64.tar.gz
             lsdeps-linux-amd64.tar.gz
-      - uses: noClaps/homebrew-tap-action@v1.0.0
+      - uses: noClaps/homebrew-tap-action@v1.1.0
         with:
           tap_repo: noClaps/homebrew-tap
           formula_name: lsdeps

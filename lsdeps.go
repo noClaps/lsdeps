@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"strings"
+	"os"
 	"sync"
 
 	"github.com/noclaps/applause"
@@ -20,6 +21,10 @@ type args struct {
 func main() {
 	args := args{Version: "latest"}
 	err := applause.Parse(&args)
+	if err != nil {
+		logger.Errorf("ERROR: %v\n", err)
+		os.Exit(1)
+	}
 
 	packageName := args.Package
 	version := args.Version

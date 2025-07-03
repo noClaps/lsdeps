@@ -1,4 +1,4 @@
-module github.com/noClaps/lsdeps
+module github.com/noclaps/lsdeps
 
 go 1.24.4
 

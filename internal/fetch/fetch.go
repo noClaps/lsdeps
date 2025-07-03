@@ -4,15 +4,15 @@ import (
 	"encoding/json"
 	"net/http"
 	"time"
+
+	"golang.org/x/net/http2"
 )
 
 var client = &http.Client{
 	Timeout: 10 * time.Second,
-	Transport: &http.Transport{
-		MaxIdleConns:        100,
-		MaxIdleConnsPerHost: 10,
-		IdleConnTimeout:     90 * time.Second,
-		DisableCompression:  false, // Enable gzip compression
+	Transport: &http2.Transport{
+		IdleConnTimeout:    90 * time.Second,
+		DisableCompression: false, // Enable gzip compression
 	},
 }
 

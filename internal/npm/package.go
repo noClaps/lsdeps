@@ -27,10 +27,7 @@ func GetDeps(name string, skipPeer bool, skipOptional bool, version string) (map
 	deps := make(map[string]string)
 	packageData, err := fetch.Fetch[npmPackage](fmt.Sprintf("https://registry.npmjs.com/%s/%s", name, version))
 	if err != nil {
-		packageData, err = fetch.Fetch[npmPackage](fmt.Sprintf("https://registry.npmjs.com/%s/latest", name))
-		if err != nil {
-			return nil, err
-		}
+		return nil, err
 	}
 
 	if len(packageData.Dependencies) != 0 {

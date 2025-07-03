@@ -2,6 +2,7 @@ package fetch
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -22,6 +23,10 @@ func Fetch[T any](url string) (*T, error) {
 		return nil, err
 	}
 	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("HTTP %d: %s", res.StatusCode, res.Status)
+	}
 
 	pkg := new(T)
 	err = json.NewDecoder(res.Body).Decode(pkg)

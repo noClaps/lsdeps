@@ -1,7 +1,6 @@
 package npm
 
 import (
-	"fmt"
 	"maps"
 	"strings"
 
@@ -24,7 +23,7 @@ func GetDeps(name string, skipPeer bool, skipOptional bool, version string) (map
 
 	version = parseVersion(version)
 
-	pkg, err := fetch.Fetch[npmPackage](fmt.Sprintf("https://registry.npmjs.com/%s/%s", name, version))
+	pkg, err := fetch.Fetch[npmPackage]("https://registry.npmjs.com/" + name + "/" + version)
 	if err != nil {
 		return nil, err
 	}

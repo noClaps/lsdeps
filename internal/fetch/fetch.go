@@ -13,7 +13,9 @@ var client = &http.Client{
 	Timeout: 10 * time.Second,
 	Transport: &http2.Transport{
 		IdleConnTimeout:    90 * time.Second,
-		DisableCompression: false, // Enable gzip compression
+		DisableCompression: false,   // Enable gzip compression
+		MaxReadFrameSize:   1048576, // 1MB
+		ReadIdleTimeout:    30 * time.Second,
 	},
 }
 

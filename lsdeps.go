@@ -31,11 +31,6 @@ func main() {
 	fmt.Printf("Fetching dependencies for %s@%s", packageName, version)
 
 	depSet := map[string]bool{}
-	if len(version) >= 4 && version[:4] == "npm:" {
-		actualPackage := strings.SplitN(version[4:], "@", 2)
-		packageName = actualPackage[0]
-		version = actualPackage[1]
-	}
 
 	queue, err := npm.GetDeps(packageName, args.SkipPeer, args.SkipOptional, version)
 	if err != nil {

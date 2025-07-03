@@ -24,20 +24,25 @@ func GetDeps(name string, skipPeer bool, skipOptional bool, version string) (map
 
 	version = parseVersion(version)
 
-	deps := make(map[string]string)
-	packageData, err := fetch.Fetch[npmPackage](fmt.Sprintf("https://registry.npmjs.com/%s/%s", name, version))
+	pkg, err := fetch.Fetch[npmPackage](fmt.Sprintf("https://registry.npmjs.com/%s/%s", name, version))
 	if err != nil {
 		return nil, err
 	}
 
-	if len(packageData.Dependencies) != 0 {
-		maps.Copy(deps, packageData.Dependencies)
+	totalDepsLen := len(pkg.Dependencies)
+	if !skipPeer {
+		totalDepsLen += len(pkg.PeerDependencies)
 	}
-	if !skipPeer && len(packageData.PeerDependencies) != 0 {
-		maps.Copy(deps, packageData.PeerDependencies)
+	if !skipOptional {
+		totalDepsLen += len(pkg.OptionalDependencies)
 	}
-	if !skipOptional && len(packageData.OptionalDependencies) != 0 {
-		maps.Copy(deps, packageData.OptionalDependencies)
+	deps := make(map[string]string, totalDepsLen)
+	maps.Copy(deps, pkg.Dependencies)
+	if !skipPeer {
+		maps.Copy(deps, pkg.PeerDependencies)
+	}
+	if !skipOptional {
+		maps.Copy(deps, pkg.OptionalDependencies)
 	}
 
 	return deps, nil

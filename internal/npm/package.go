@@ -8,9 +8,9 @@ import (
 )
 
 type npmPackage struct {
-	Dependencies         map[string]string `json:"dependencies,omitempty"`
-	OptionalDependencies map[string]string `json:"optionalDependencies,omitempty"`
-	PeerDependencies     map[string]string `json:"peerDependencies,omitempty"`
+	Dependencies         map[string]string `json:"dependencies"`
+	OptionalDependencies map[string]string `json:"optionalDependencies"`
+	PeerDependencies     map[string]string `json:"peerDependencies"`
 }
 
 func GetDeps(name string, skipPeer bool, skipOptional bool, version string) (map[string]string, error) {

@@ -13,7 +13,7 @@ brew install noClaps/tap/lsdeps
 or build it from source using Go:
 
 ```sh
-go install github.com/noClaps/lsdeps@latest
+go install github.com/noclaps/lsdeps@latest
 ```
 
 or download one of the prebuilt binaries in [Releases](https://github.com/noClaps/lsdeps/releases).

@@ -51,16 +51,16 @@ func main() {
 			go func() {
 				defer wg.Done()
 				mu.Lock()
-				if _, exists := depSet[pkg]; exists {
+				if _, exists := depSet[setPackage]; exists {
 					mu.Unlock()
 					return
 				}
-				depSet[pkg] = struct{}{}
+				depSet[setPackage] = struct{}{}
 				mu.Unlock()
 
 				deps, err := npm.GetDeps(setPackage, args.SkipPeer, args.SkipOptional, setPackageVersion)
 				if err != nil {
-					logger.Errorf("\033[2K\rERROR: Package %s@%s does not exist", pkg, ver)
+					logger.Errorf("\033[2K\rERROR: Package %s@%s does not exist", setPackage, setPackageVersion)
 					return
 				}
 

@@ -29,7 +29,7 @@ func main() {
 	version := args.Version
 	fmt.Print("Fetching dependencies...")
 
-	depSet := map[string]bool{}
+	depSet := map[string]struct{}{}
 
 	queue, err := npm.GetDeps(packageName, args.SkipPeer, args.SkipOptional, version)
 	if err != nil {
@@ -51,11 +51,11 @@ func main() {
 			go func() {
 				defer wg.Done()
 				mu.Lock()
-				if depSet[setPackage] {
+				if _, exists := depSet[pkg]; exists {
 					mu.Unlock()
 					return
 				}
-				depSet[setPackage] = true
+				depSet[pkg] = struct{}{}
 				mu.Unlock()
 
 				deps, err := npm.GetDeps(setPackage, args.SkipPeer, args.SkipOptional, setPackageVersion)
@@ -66,7 +66,7 @@ func main() {
 
 				mu.Lock()
 				for dep, version := range deps {
-					if !depSet[dep] {
+					if _, exists := depSet[dep]; !exists {
 						queue[dep] = version
 					}
 				}

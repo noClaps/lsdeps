@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"strings"
 	"os"
 	"sync"
 
@@ -28,13 +27,13 @@ func main() {
 
 	packageName := args.Package
 	version := args.Version
-	fmt.Printf("Fetching dependencies for %s@%s", packageName, version)
+	fmt.Print("Fetching dependencies...")
 
 	depSet := map[string]bool{}
 
 	queue, err := npm.GetDeps(packageName, args.SkipPeer, args.SkipOptional, version)
 	if err != nil {
-		logger.Errorf("\nERROR: Package %s@%s does not exist\n", packageName, version)
+		logger.Errorf("\033[2K\rERROR: Package %s@%s does not exist", packageName, version)
 		return
 	}
 
@@ -59,10 +58,9 @@ func main() {
 				depSet[setPackage] = true
 				mu.Unlock()
 
-				fmt.Printf("\033[2K\rFetching dependencies for %s@%s", setPackage, setPackageVersion)
 				deps, err := npm.GetDeps(setPackage, args.SkipPeer, args.SkipOptional, setPackageVersion)
 				if err != nil {
-					logger.Errorf("\nERROR: Package %s@%s does not exist\n", setPackage, setPackageVersion)
+					logger.Errorf("\033[2K\rERROR: Package %s@%s does not exist", pkg, ver)
 					return
 				}
 
@@ -79,10 +77,8 @@ func main() {
 	}
 
 	fmt.Printf("\033[2K\r")
-	fmt.Printf(`
-Name: %s
+	fmt.Printf(`Name: %s
 URL: https://npmjs.com/package/%s/v/%s
 Dependency count: %d
-
 `, packageName, packageName, version, len(depSet))
 }

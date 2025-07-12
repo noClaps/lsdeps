@@ -7,7 +7,15 @@ type NpmPackage struct {
 }
 
 func GetDeps(pkg *NpmPackage, skipOptional, skipPeer bool) []string {
-	deps := []string{}
+	cap := len(pkg.Dependencies)
+	if !skipOptional {
+		cap += len(pkg.OptionalDependencies)
+	}
+	if !skipPeer {
+		cap += len(pkg.PeerDependencies)
+	}
+
+	deps := make([]string, 0, cap)
 	for name := range pkg.Dependencies {
 		deps = append(deps, name)
 	}

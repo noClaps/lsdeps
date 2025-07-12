@@ -1,10 +1,5 @@
 module github.com/noclaps/lsdeps
 
-go 1.24.4
+go 1.24.5
 
-require (
-	github.com/noclaps/applause v0.3.4
-	golang.org/x/net v0.42.0
-)
-
-require golang.org/x/text v0.27.0 // indirect
+require github.com/noclaps/applause v0.3.4

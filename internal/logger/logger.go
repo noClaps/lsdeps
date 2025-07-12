@@ -5,6 +5,13 @@ import (
 	"os"
 )
 
-func Errorf(format string, a ...any) {
-	fmt.Fprintf(os.Stderr, fmt.Sprintf("\033[31m%s\033[0m", format), a...)
+func Errorln(a ...any) {
+	fmt.Fprint(os.Stderr, "\033[31mERROR:\033[0m ")
+	fmt.Fprintln(os.Stderr, a...)
+}
+
+func Fatalln(a ...any) {
+	fmt.Fprint(os.Stderr, "\033[31mERROR:\033[0m ")
+	fmt.Fprintln(os.Stderr, a...)
+	os.Exit(1)
 }

@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"sync"
 
 	"github.com/noclaps/applause"
@@ -14,71 +13,75 @@ type args struct {
 	Package      string `help:"The npm package to count dependencies for."`
 	SkipOptional bool   `type:"option" short:"o" help:"Skip counting optional dependencies."`
 	SkipPeer     bool   `type:"option" short:"p" help:"Skip counting peer dependencies"`
-	Version      string `type:"option" help:"The version of the package being fetched."`
 }
 
 func main() {
-	args := args{Version: "latest"}
+	args := args{}
 	err := applause.Parse(&args)
 	if err != nil {
-		logger.Errorf("ERROR: %v\n", err)
-		os.Exit(1)
+		logger.Fatalln(err)
 	}
 
-	packageName := args.Package
-	version := args.Version
+	name := args.Package
+
+	var mu sync.Mutex
+
+	toFetch := map[string]struct{}{name: {}}
+	toProcess := map[*npm.NpmPackage]struct{}{}
+	deps := map[string]struct{}{}
+
 	fmt.Print("Fetching dependencies...")
 
-	depSet := map[string]struct{}{}
-
-	queue, err := npm.GetDeps(packageName, args.SkipPeer, args.SkipOptional, version)
-	if err != nil {
-		logger.Errorf("\033[2K\rERROR: Package %s@%s does not exist", packageName, version)
-		return
-	}
-
-	var wg sync.WaitGroup // To stop code from continuing before all async tasks are finished
-	var mu sync.Mutex     // To lock reading and writing shared values
-
-	for len(queue) > 0 {
-		mu.Lock()
-		currentQueue := queue
-		queue = make(map[string]string)
-		mu.Unlock()
-
-		for setPackage, setPackageVersion := range currentQueue {
-			wg.Add(1)
+	for len(toFetch) > 0 {
+		var fetchWg sync.WaitGroup
+		for nameVersion := range toFetch {
+			fetchWg.Add(1)
 			go func() {
-				defer wg.Done()
-				mu.Lock()
-				if _, exists := depSet[setPackage]; exists {
-					mu.Unlock()
-					return
-				}
-				depSet[setPackage] = struct{}{}
-				mu.Unlock()
+				defer fetchWg.Done()
 
-				deps, err := npm.GetDeps(setPackage, args.SkipPeer, args.SkipOptional, setPackageVersion)
+				pkg, err := npm.Fetch(nameVersion)
 				if err != nil {
-					logger.Errorf("\033[2K\rERROR: Package %s@%s does not exist", setPackage, setPackageVersion)
+					logger.Errorln(err)
 					return
 				}
 
 				mu.Lock()
-				for dep, version := range deps {
-					if _, exists := depSet[dep]; !exists {
-						queue[dep] = version
+				if _, ok := toProcess[pkg]; !ok {
+					toProcess[pkg] = struct{}{}
+				}
+				mu.Unlock()
+			}()
+		}
+		fetchWg.Wait()
+		clear(toFetch)
+
+		var procWg sync.WaitGroup
+		for pkg := range toProcess {
+			procWg.Add(1)
+			go func() {
+				defer procWg.Done()
+
+				pkgsDeps := npm.GetDeps(pkg, args.SkipOptional, args.SkipPeer)
+
+				mu.Lock()
+				for _, dep := range pkgsDeps {
+					if _, ok := deps[dep]; !ok {
+						deps[dep] = struct{}{}
+					}
+					if _, ok := toFetch[dep]; !ok {
+						toFetch[dep] = struct{}{}
 					}
 				}
 				mu.Unlock()
 			}()
 		}
-		wg.Wait()
+		procWg.Wait()
+		clear(toProcess)
 	}
 
 	fmt.Printf("\033[2K\r")
 	fmt.Printf(`Name: %s
-URL: https://npmjs.com/package/%s/v/%s
+URL: https://npmjs.com/package/%s
 Dependency count: %d
-`, packageName, packageName, version, len(depSet))
+`, name, name, len(deps))
 }

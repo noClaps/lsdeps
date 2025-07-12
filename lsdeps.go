@@ -34,12 +34,12 @@ func main() {
 
 	for len(toFetch) > 0 {
 		var fetchWg sync.WaitGroup
-		for nameVersion := range toFetch {
+		for name := range toFetch {
 			fetchWg.Add(1)
 			go func() {
 				defer fetchWg.Done()
 
-				pkg, err := npm.Fetch(nameVersion)
+				pkg, err := npm.Fetch(name)
 				if err != nil {
 					logger.Errorln(err)
 					return

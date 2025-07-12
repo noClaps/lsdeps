@@ -67,8 +67,6 @@ func main() {
 				for _, dep := range pkgsDeps {
 					if _, ok := deps[dep]; !ok {
 						deps[dep] = struct{}{}
-					}
-					if _, ok := toFetch[dep]; !ok {
 						toFetch[dep] = struct{}{}
 					}
 				}

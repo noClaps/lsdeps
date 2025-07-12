@@ -21,7 +21,7 @@ or download one of the prebuilt binaries in [Releases](https://github.com/noClap
 ## Usage
 
 ```
-USAGE: lsdeps <package> [--skip-optional] [--skip-peer] [--version <version>]
+USAGE: lsdeps <package> [--skip-optional] [--skip-peer]
 
 ARGUMENTS:
   <package>              The npm package to count dependencies for.
@@ -29,7 +29,6 @@ ARGUMENTS:
 OPTIONS:
   --skip-optional, -o    Skip counting optional dependencies.
   --skip-peer, -p        Skip counting peer dependencies.
-  --version <version>    The version of the package being fetched.
   --help, -h             Display this help message and exit.
 ```
 
@@ -62,16 +61,6 @@ lsdeps astro -p -o
 lsdeps astro --skip-peer --skip-optional
 lsdeps astro --skip-optional --skip-peer
 ```
-
-You can fetch dependencies for a specific package version with the `-v` or `--version` option:
-
-```sh
-lsdeps astro -v 4.0.0
-```
-
-The valid values for version are `latest`, `next` and a specific semantic version like `1.0.0` or `1.5.0-beta.1`. If the version cannot be parsed, `latest` is used instead.
-
-**NOTE**: The version parsing is not perfect and likely needs to be rewritten in a much better way. However, it works in the meantime.
 
 You can view the help by using `-h` or `--help`:
 

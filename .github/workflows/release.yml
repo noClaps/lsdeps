@@ -10,21 +10,22 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        versions:
+        include:
           - os: macos-latest
             goos: darwin
             goarch: arm64
           - os: ubuntu-latest
             goos: linux
             goarch: amd64
-    runs-on: ${{ matrix.versions.os }}
-    name: ${{ matrix.versions.goos }}-${{ matrix.versions.goarch }}
+    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.goos }}-${{ matrix.goarch }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-      - run: GOOS=${{ matrix.versions.goos }} GOARCH=${{ matrix.versions.goarch }} go build -ldflags="-s" -o lsdeps-${{ matrix.versions.goos }}-${{ matrix.versions.goarch }}
+      - run: GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -ldflags="-s" -o lsdeps
+      - run: tar -acf lsdeps-${{ matrix.goos }}-${{ matrix.goarch }}.tar.xz lsdeps
       - uses: softprops/action-gh-release@v2
         with:
-          files: lsdeps-${{ matrix.versions.goos }}-${{ matrix.versions.goarch }}
+          files: lsdeps-${{ matrix.goos }}-${{ matrix.goarch }}.tar.xz
